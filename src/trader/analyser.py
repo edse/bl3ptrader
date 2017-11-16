@@ -46,9 +46,9 @@ class Analyser(object):
             moving_average(mean(price), 20) as ma20,
             moving_average(mean(price), 10) as ma10
             FROM "{}"
-            WHERE time > now() - 6h
-            GROUP BY time(5m) fill(none)
-            """.format(pair)
+            WHERE time > now() - 3h
+            GROUP BY time(1m) fill(previous)
+        """.format(pair)
 
         rs = influx_client.query(q)
         r = list(rs.get_points(measurement=pair))[-1]

@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_INFLUX",
-      "label": "Influx",
+      "name": "DS_INFLUXDB",
+      "label": "InfluxDB",
       "description": "",
       "type": "datasource",
       "pluginId": "influxdb",
@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "4.3.2"
+      "version": "4.6.2"
     },
     {
       "type": "panel",
@@ -30,7 +30,17 @@
     }
   ],
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "editable": true,
   "gnetId": null,
@@ -49,8 +59,9 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUX}",
-          "fill": 1,
+          "datasource": "${DS_INFLUXDB}",
+          "fill": 0,
+          "height": "500px",
           "id": 1,
           "interval": "> 1m",
           "legend": {
@@ -86,13 +97,13 @@
               "groupBy": [
                 {
                   "params": [
-                    "$__interval"
+                    "1m"
                   ],
                   "type": "time"
                 },
                 {
                   "params": [
-                    "none"
+                    "previous"
                   ],
                   "type": "fill"
                 }
@@ -101,6 +112,8 @@
               "measurement": "BTC_EUR",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT mean(\"price\") FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
+              "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -125,13 +138,13 @@
               "groupBy": [
                 {
                   "params": [
-                    "$__interval"
+                    "1m"
                   ],
                   "type": "time"
                 },
                 {
                   "params": [
-                    "none"
+                    "previous"
                   ],
                   "type": "fill"
                 }
@@ -140,6 +153,8 @@
               "measurement": "BTC_EUR",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT moving_average(mean(\"price\"), 10) FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
+              "rawQuery": true,
               "refId": "B",
               "resultFormat": "time_series",
               "select": [
@@ -170,13 +185,13 @@
               "groupBy": [
                 {
                   "params": [
-                    "$__interval"
+                    "1m"
                   ],
                   "type": "time"
                 },
                 {
                   "params": [
-                    "none"
+                    "previous"
                   ],
                   "type": "fill"
                 }
@@ -185,6 +200,8 @@
               "measurement": "BTC_EUR",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT moving_average(mean(\"price\"), 20) FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
+              "rawQuery": true,
               "refId": "C",
               "resultFormat": "time_series",
               "select": [
@@ -208,6 +225,84 @@
                 ]
               ],
               "tags": []
+            },
+            {
+              "alias": "MA10db",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": true,
+              "measurement": "MA10_MA20_DIFF",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "D",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "ma10"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "alias": "MA20db",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": true,
+              "measurement": "MA10_MA20_DIFF",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "E",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "ma20"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
             }
           ],
           "thresholds": [],
@@ -219,6 +314,7 @@
             "sort": 0,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -263,14 +359,16 @@
           "bars": true,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUX}",
+          "datasource": "${DS_INFLUXDB}",
           "fill": 1,
+          "height": "180px",
           "id": 3,
           "interval": ">1m",
           "legend": {
             "alignAsTable": true,
             "avg": true,
             "current": true,
+            "hideEmpty": false,
             "max": true,
             "min": true,
             "show": true,
@@ -352,12 +450,13 @@
             "sort": 0,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
             "mode": "time",
             "name": null,
-            "show": true,
+            "show": false,
             "values": []
           },
           "yaxes": [
@@ -375,7 +474,7 @@
               "logBase": 1,
               "max": null,
               "min": null,
-              "show": true
+              "show": false
             }
           ]
         }
@@ -396,7 +495,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_INFLUX}",
+          "datasource": "${DS_INFLUXDB}",
           "fill": 0,
           "id": 2,
           "legend": {
@@ -554,15 +653,17 @@
           ],
           "thresholds": [
             {
-              "colorMode": "ok",
+              "colorMode": "custom",
               "fill": true,
+              "fillColor": "rgba(0, 115, 255, 0.09)",
               "line": false,
               "op": "gt",
               "value": 2
             },
             {
-              "colorMode": "critical",
+              "colorMode": "custom",
               "fill": true,
+              "fillColor": "rgba(226, 255, 0, 0.07)",
               "line": false,
               "op": "lt",
               "value": -2
@@ -576,12 +677,13 @@
             "sort": 0,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
             "mode": "time",
             "name": null,
-            "show": true,
+            "show": false,
             "values": []
           },
           "yaxes": [
@@ -649,5 +751,5 @@
   },
   "timezone": "browser",
   "title": "Bl3p Trading Bot",
-  "version": 13
+  "version": 3
 }
