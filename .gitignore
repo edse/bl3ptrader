@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# sqlite
+*.sqlite3
+
+# params
+src/main/params.py
