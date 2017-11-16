@@ -3,21 +3,15 @@ from .models import Advice
 from .storage import Storage
 from django.utils import timezone
 import datetime
-import logging
-
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-logger.addHandler(ch)
+from .base import *  # noqa
 
 
 class Analyser(object):
     @staticmethod
     def recentAdvice(pair, position):
         date = timezone.now() - datetime.timedelta(
-            seconds=settings.BOT_ADVICE_TTL)
+            seconds=settings.BOT_ADVICE_TTL
+        )
 
         return Advice.objects.filter(
             pair=pair,
@@ -29,7 +23,10 @@ class Analyser(object):
     def bestAdvice(position):
         date = timezone.now() - datetime.timedelta(seconds=settings.BOT_ADVICE_TTL)
         order = '-diff' if position == 'long' else 'diff'
-        return Advice.objects.filter(time__gte=date, position=position).order_by(order).all().first()
+        return Advice.objects.filter(
+            time__gte=date,
+            position=position
+        ).order_by(order).all().first()
 
     @staticmethod
     def analyse(data):
@@ -50,49 +47,59 @@ class Analyser(object):
             moving_average(mean(price), 10) as ma10
             FROM "{}"
             WHERE time > now() - 6h
-            GROUP BY time(5m) fill(none) ORDER BY DESC
+            GROUP BY time(5m) fill(none)
             """.format(pair)
 
         rs = influx_client.query(q)
-        result = list(rs.get_points(measurement=pair))
+        r = list(rs.get_points(measurement=pair))[-1]
 
-        for r in result:
-            if r['price']:
-                current['price'] = r['price']
-                current['time'] = r['time']
-            if r['ma10']:
-                current['ma10'] = r['ma10']
-            if r['ma20']:
-                current['ma20'] = r['ma20']
-            if current['time'] and current['price'] and current['ma10'] and current['ma20']:
-                break
+        if r['price']:
+            current['price'] = r['price']
+            current['time'] = r['time']
+        if r['ma10']:
+            current['ma10'] = r['ma10']
+        if r['ma20']:
+            current['ma20'] = r['ma20']
+
+        logger.info('Current: %s', current)
 
         if current['time'] and current['price'] and current['ma10'] and current['ma20']:
             # diff
-            diff = current['ma20'] - current['ma10']
+            diff = current['ma10'] - current['ma20']
+            logger.info('%s MAs diff: %s', pair, diff)
 
-            logger.debug('{} DIFF: {}'.format(pair, diff))
+            Storage.store([{
+                'measurement': 'MA10_MA20_DIFF',
+                'tags': {
+                    'asset': 'MA10',
+                    'currency': 'MA20'
+                },
+                'fields': {
+                    'timestamp': current['time'],
+                    'diff': diff
+                }
+            }])
 
-            if diff <= -0.00025:
-                # short
-                logger.debug('SHORT')
-                # position = 'short'
-                # tweet = '{title}\n{position}\n{price}\n{diff}'.format(
-                #     title=settings.TWEET_TITLE.format(pair),
-                #     position=settings.TWEET_POSITION.format(position),
-                #     price=settings.TWEET_PRICE.format(current['price']),
-                #     diff=diff
-                # )
-            elif diff >= 0.00025:
-                # short
-                logger.debug('LONG')
-                # position = 'long'
-                # tweet = '{title}\n{position}\n{price}\n{diff}'.format(
-                #     title=settings.TWEET_TITLE.format(pair),
-                #     position=settings.TWEET_POSITION.format(position),
-                #     price=settings.TWEET_PRICE.format(current['price']),
-                #     diff=diff
-                # )
+            # if diff <= -0.00025:
+            #     short
+            #     logger.debug('SHORT')
+            #     position = 'short'
+            #     tweet = '{title}\n{position}\n{price}\n{diff}'.format(
+            #         title=settings.TWEET_TITLE.format(pair),
+            #         position=settings.TWEET_POSITION.format(position),
+            #         price=settings.TWEET_PRICE.format(current['price']),
+            #         diff=diff
+            #     )
+            # elif diff >= 0.00025:
+            #     short
+            #     logger.debug('LONG')
+            #     position = 'long'
+            #     tweet = '{title}\n{position}\n{price}\n{diff}'.format(
+            #         title=settings.TWEET_TITLE.format(pair),
+            #         position=settings.TWEET_POSITION.format(position),
+            #         price=settings.TWEET_PRICE.format(current['price']),
+            #         diff=diff
+            #     )
 
             # if tweet:
             #     if Analizer.recentAdvice(pair=pair, position=position):
