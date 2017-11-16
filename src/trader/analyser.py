@@ -76,7 +76,9 @@ class Analyser(object):
                 },
                 'fields': {
                     'timestamp': current['time'],
-                    'diff': diff
+                    'diff': diff,
+                    'ma10': current['ma10'],
+                    'ma20': current['ma20'],
                 }
             }])
 
