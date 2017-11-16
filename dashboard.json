@@ -52,15 +52,19 @@
           "datasource": "${DS_INFLUX}",
           "fill": 1,
           "id": 1,
-          "interval": "> 5m",
+          "interval": "> 1m",
           "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": true,
+            "rightSide": false,
             "show": true,
-            "total": false,
-            "values": false
+            "total": true,
+            "values": true
           },
           "lines": true,
           "linewidth": 1,
@@ -127,7 +131,7 @@
                 },
                 {
                   "params": [
-                    "linear"
+                    "none"
                   ],
                   "type": "fill"
                 }
@@ -152,7 +156,7 @@
                   },
                   {
                     "params": [
-                      10
+                      "10"
                     ],
                     "type": "moving_average"
                   }
@@ -172,7 +176,7 @@
                 },
                 {
                   "params": [
-                    "linear"
+                    "none"
                   ],
                   "type": "fill"
                 }
@@ -256,20 +260,156 @@
       "panels": [
         {
           "aliasColors": {},
-          "bars": false,
+          "bars": true,
           "dashLength": 10,
           "dashes": false,
           "datasource": "${DS_INFLUX}",
           "fill": 1,
+          "id": 3,
+          "interval": ">1m",
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": false,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "volume",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "0"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "BTC_EUR",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "amount"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  },
+                  {
+                    "params": [
+                      " / 1000"
+                    ],
+                    "type": "math"
+                  }
+                ]
+              ],
+              "tags": []
+            }
+          ],
+          "thresholds": [
+            {
+              "colorMode": "critical",
+              "fill": true,
+              "line": true,
+              "op": "gt"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "VOLUME",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_INFLUX}",
+          "fill": 0,
           "id": 2,
           "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 1,
@@ -334,11 +474,12 @@
                 },
                 {
                   "params": [
-                    "previous"
+                    "none"
                   ],
                   "type": "fill"
                 }
               ],
+              "hide": true,
               "measurement": "MA10_MA20_DIFF",
               "orderByTime": "ASC",
               "policy": "default",
@@ -348,7 +489,7 @@
                 [
                   {
                     "params": [
-                      "value"
+                      "diff"
                     ],
                     "type": "field"
                   },
@@ -358,7 +499,7 @@
                   },
                   {
                     "params": [
-                      10
+                      "10"
                     ],
                     "type": "moving_average"
                   }
@@ -377,11 +518,12 @@
                 },
                 {
                   "params": [
-                    "previous"
+                    "none"
                   ],
                   "type": "fill"
                 }
               ],
+              "hide": true,
               "measurement": "MA10_MA20_DIFF",
               "orderByTime": "ASC",
               "policy": "default",
@@ -391,7 +533,7 @@
                 [
                   {
                     "params": [
-                      "value"
+                      "diff"
                     ],
                     "type": "field"
                   },
@@ -401,7 +543,7 @@
                   },
                   {
                     "params": [
-                      "20"
+                      "30"
                     ],
                     "type": "moving_average"
                   }
@@ -410,7 +552,22 @@
               "tags": []
             }
           ],
-          "thresholds": [],
+          "thresholds": [
+            {
+              "colorMode": "ok",
+              "fill": true,
+              "line": false,
+              "op": "gt",
+              "value": 2
+            },
+            {
+              "colorMode": "critical",
+              "fill": true,
+              "line": false,
+              "op": "lt",
+              "value": -2
+            }
+          ],
           "timeFrom": null,
           "timeShift": null,
           "title": "MAs Diff",
@@ -442,7 +599,7 @@
               "logBase": 1,
               "max": null,
               "min": null,
-              "show": true
+              "show": false
             }
           ]
         }
@@ -492,5 +649,5 @@
   },
   "timezone": "browser",
   "title": "Bl3p Trading Bot",
-  "version": 8
+  "version": 13
 }
