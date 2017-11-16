@@ -6,4 +6,5 @@ Bl3p exchange trading bot
 make build
 
 ## Build
+source venv/bin/activate
 make run
