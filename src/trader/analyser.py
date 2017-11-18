@@ -1,32 +1,52 @@
-from django.conf import settings
-from .models import Advice
 from .storage import Storage
-from django.utils import timezone
-import datetime
+from .trader import Trader
 from .base import *  # noqa
 
 
 class Analyser(object):
     @staticmethod
-    def recentAdvice(pair, position):
-        date = timezone.now() - datetime.timedelta(
-            seconds=settings.BOT_ADVICE_TTL
-        )
+    def checkTrend():
+        """
+        Check the last 2 records from the last 30m grouped by 1m
+        Returns:
+            int(-10): when the trending is down and a sell action is required
+            int(-1): when the trending is down
+            int(0): when in no trend or no enough data
+            int(1): when the trending is up
+            int(10): when the trending is up and a sell action is required
+        """
+        influx_client = Storage.get_client()
+        q = """SELECT mean("diff") as diff
+            FROM "MA10_MA20_DIFF"
+            WHERE time > now() - 30m
+            GROUP BY time(1m) fill(previous)"""
+        rs = influx_client.query(q)
 
-        return Advice.objects.filter(
-            pair=pair,
-            time__gte=date,
-            position=position
-        )
+        d1 = list(rs.get_points(measurement='MA10_MA20_DIFF'))[-2]
+        d2 = list(rs.get_points(measurement='MA10_MA20_DIFF'))[-1]
 
-    @staticmethod
-    def bestAdvice(position):
-        date = timezone.now() - datetime.timedelta(seconds=settings.BOT_ADVICE_TTL)
-        order = '-diff' if position == 'long' else 'diff'
-        return Advice.objects.filter(
-            time__gte=date,
-            position=position
-        ).order_by(order).all().first()
+        if 'diff' in d1 and 'diff' in d2:
+            d1 = d1['diff']
+            d2 = d2['diff']
+
+            if d2 > d1:
+                # diff growing
+                if d1 <= 0 and d2 > 0:
+                    # buy action
+                    return 10
+                return 1
+            elif d2 < d1:
+                # diff shrinking
+                if d2 <= 0 and d1 > 0:
+                    # sell action
+                    return -10
+                return -1
+            else:
+                # no trend
+                return 0
+        else:
+            # no enough data
+            return 0
 
     @staticmethod
     def analyse(data):
@@ -42,24 +62,39 @@ class Analyser(object):
             'ma20': None,
         }
 
-        q = """SELECT last(price) as price,
-            moving_average(mean(price), 20) as ma20,
-            moving_average(mean(price), 10) as ma10
-            FROM "{}"
+        q = """SELECT mean("price") as price
+            FROM "BTC_EUR"
             WHERE time > now() - 3h
-            GROUP BY time(1m) fill(previous)
-        """.format(pair)
-
+            GROUP BY time(1m) fill(previous)"""
         rs = influx_client.query(q)
         r = list(rs.get_points(measurement=pair))[-1]
-
-        if r['price']:
+        if 'price' in r:
             current['price'] = r['price']
             current['time'] = r['time']
-        if r['ma10']:
+
+        q = """SELECT moving_average(mean("price"), 10) as ma10
+            FROM "BTC_EUR"
+            WHERE time > now() - 3h
+            GROUP BY time(1m) fill(previous)"""
+        rs = influx_client.query(q)
+        r = list(rs.get_points(measurement=pair))[-1]
+        current['ma10'] = r['ma10']
+        if 'ma10' in r:
             current['ma10'] = r['ma10']
-        if r['ma20']:
+
+        q = """SELECT moving_average(mean("price"), 20) as ma20
+            FROM "BTC_EUR"
+            WHERE time > now() - 3h
+            GROUP BY time(1m) fill(previous)"""
+        rs = influx_client.query(q)
+        r = list(rs.get_points(measurement=pair))[-1]
+        current['ma20'] = r['ma20']
+        if 'ma20' in r:
             current['ma20'] = r['ma20']
+
+        #
+        # TODO: RUNING THE ABOVE QUERIES AS ONE
+        #
 
         logger.info('Current: %s', current)
 
@@ -82,49 +117,17 @@ class Analyser(object):
                 }
             }])
 
-            # if diff <= -0.00025:
-            #     short
-            #     logger.debug('SHORT')
-            #     position = 'short'
-            #     tweet = '{title}\n{position}\n{price}\n{diff}'.format(
-            #         title=settings.TWEET_TITLE.format(pair),
-            #         position=settings.TWEET_POSITION.format(position),
-            #         price=settings.TWEET_PRICE.format(current['price']),
-            #         diff=diff
-            #     )
-            # elif diff >= 0.00025:
-            #     short
-            #     logger.debug('LONG')
-            #     position = 'long'
-            #     tweet = '{title}\n{position}\n{price}\n{diff}'.format(
-            #         title=settings.TWEET_TITLE.format(pair),
-            #         position=settings.TWEET_POSITION.format(position),
-            #         price=settings.TWEET_PRICE.format(current['price']),
-            #         diff=diff
-            #     )
+        trader = Trader()
+        trend = Analyser.checkTrend()
 
-            # if tweet:
-            #     if Analizer.recentAdvice(pair=pair, position=position):
-            #         logger.info('{} {} - Advice already published!'.format(pair, position))
-            #         return None
+        Storage.store([{
+            'measurement': 'TREND',
+            'fields': {
+                'trend': trend
+            }
+        }])
 
-            #     if settings.BOT_TWEET:
-            #         tweet(tweet)
-
-            #     Advice.objects.create(**{
-            #         'pair': data['measurement'],
-            #         'position': position,
-            #         'price': current['price'],
-            #         'diff': diff,
-            #         'tweet': tweet,
-            #     })
-
-            #     logger.info(tweet)
-
-            #     best_short = Analizer.bestAdvice('short')
-            #     if best_short:
-            #         logger.info('Best short: {}'.format(best_short.tweet))
-
-            #     best_long = Analizer.bestAdvice('long')
-            #     if best_long:
-            #         logger.info('Best long: {}'.format(best_long.tweet))
+        if trend == 10:
+            trader.buy(current['price'])
+        elif trend == -10:
+            trader.sell(current['price'])
