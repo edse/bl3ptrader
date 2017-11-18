@@ -31,7 +31,22 @@ BOT_MAX_DIFF = 0.00025
 BOT_ADVICE_TTL = 5 * 60
 
 # EXCHANGES
-EXCHANGES = {}
+EXCHANGES = {
+    'BL3P': {
+        'name': 'BL3P',
+        'public': {
+            'url': 'wss://api.bl3p.eu/1/BTCEUR/trades',
+        },
+        'private': {
+            'url': 'https://api.bl3p.eu/1/',
+            'public_key': 'CHANGE-ME',
+            'private_key': 'CHANGE-ME',
+        },
+        'min_buy_value': 1000000,   # 10 EUR    (*1e5)
+        'min_sell_value': 5000000,  # 0.05 BTC  (*1e8)
+        'soft_run': True
+    }
+}
 
 # INFLUXDB
 INFLUXDB_HOST = 'localhost'
