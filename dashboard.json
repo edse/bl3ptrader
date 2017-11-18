@@ -52,6 +52,198 @@
   "rows": [
     {
       "collapse": false,
+      "height": 250,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_INFLUXDB}",
+          "fill": 0,
+          "id": 5,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "sell",
+              "bars": true,
+              "color": "#bf1b00",
+              "points": false
+            },
+            {
+              "alias": "buy",
+              "bars": true,
+              "color": "#508642",
+              "points": false
+            }
+          ],
+          "spaceLength": 10,
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "buy",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "TRADE",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"amount\")  / 1000 FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time($__interval) fill(0)",
+              "rawQuery": false,
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "amount"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "bid"
+                }
+              ]
+            },
+            {
+              "alias": "sell",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "TRADE",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"amount\")  / 1000 FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time($__interval) fill(0)",
+              "rawQuery": false,
+              "refId": "B",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "amount"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "ask"
+                }
+              ]
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "BL3P BOT TRADES",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ]
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
       "height": "250px",
       "panels": [
         {
@@ -65,17 +257,17 @@
           "id": 1,
           "interval": "> 1m",
           "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
             "hideEmpty": false,
             "hideZero": false,
-            "max": true,
-            "min": true,
+            "max": false,
+            "min": false,
             "rightSide": false,
             "show": true,
-            "total": true,
-            "values": true
+            "total": false,
+            "values": false
           },
           "lines": true,
           "linewidth": 1,
@@ -85,7 +277,22 @@
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "seriesOverrides": [],
+          "seriesOverrides": [
+            {
+              "alias": "buy",
+              "color": "#508642",
+              "lines": false,
+              "pointradius": 5,
+              "points": true
+            },
+            {
+              "alias": "sell",
+              "color": "#bf1b00",
+              "lines": false,
+              "pointradius": 5,
+              "points": true
+            }
+          ],
           "spaceLength": 10,
           "span": 12,
           "stack": false,
@@ -113,7 +320,7 @@
               "orderByTime": "ASC",
               "policy": "default",
               "query": "SELECT mean(\"price\") FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
-              "rawQuery": true,
+              "rawQuery": false,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -144,7 +351,7 @@
                 },
                 {
                   "params": [
-                    "previous"
+                    "linear"
                   ],
                   "type": "fill"
                 }
@@ -154,7 +361,7 @@
               "orderByTime": "ASC",
               "policy": "default",
               "query": "SELECT moving_average(mean(\"price\"), 10) FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
-              "rawQuery": true,
+              "rawQuery": false,
               "refId": "B",
               "resultFormat": "time_series",
               "select": [
@@ -191,7 +398,7 @@
                 },
                 {
                   "params": [
-                    "previous"
+                    "linear"
                   ],
                   "type": "fill"
                 }
@@ -201,7 +408,7 @@
               "orderByTime": "ASC",
               "policy": "default",
               "query": "SELECT moving_average(mean(\"price\"), 20) FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
-              "rawQuery": true,
+              "rawQuery": false,
               "refId": "C",
               "resultFormat": "time_series",
               "select": [
@@ -227,33 +434,35 @@
               "tags": []
             },
             {
-              "alias": "MA10db",
+              "alias": "buy",
               "dsType": "influxdb",
               "groupBy": [
                 {
                   "params": [
-                    "$__interval"
+                    "1m"
                   ],
                   "type": "time"
                 },
                 {
                   "params": [
-                    "linear"
+                    "none"
                   ],
                   "type": "fill"
                 }
               ],
               "hide": true,
-              "measurement": "MA10_MA20_DIFF",
+              "measurement": "TRADE",
               "orderByTime": "ASC",
               "policy": "default",
-              "refId": "D",
+              "query": "SELECT mean(\"price\") FROM \"TRADE\" WHERE (\"asset\" = 'bid') AND $timeFilter GROUP BY time(1m) fill(none)",
+              "rawQuery": false,
+              "refId": "F",
               "resultFormat": "time_series",
               "select": [
                 [
                   {
                     "params": [
-                      "ma10"
+                      "price"
                     ],
                     "type": "field"
                   },
@@ -263,36 +472,44 @@
                   }
                 ]
               ],
-              "tags": []
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "bid"
+                }
+              ]
             },
             {
-              "alias": "MA20db",
+              "alias": "sell",
               "dsType": "influxdb",
               "groupBy": [
                 {
                   "params": [
-                    "$__interval"
+                    "1m"
                   ],
                   "type": "time"
                 },
                 {
                   "params": [
-                    "linear"
+                    "none"
                   ],
                   "type": "fill"
                 }
               ],
               "hide": true,
-              "measurement": "MA10_MA20_DIFF",
+              "measurement": "TRADE",
               "orderByTime": "ASC",
               "policy": "default",
-              "refId": "E",
+              "query": "SELECT mean(\"price\") FROM \"TRADE\" WHERE (\"asset\" = 'ask') AND $timeFilter GROUP BY time(1m) fill(none)",
+              "rawQuery": false,
+              "refId": "G",
               "resultFormat": "time_series",
               "select": [
                 [
                   {
                     "params": [
-                      "ma20"
+                      "price"
                     ],
                     "type": "field"
                   },
@@ -302,7 +519,13 @@
                   }
                 ]
               ],
-              "tags": []
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "ask"
+                }
+              ]
             }
           ],
           "thresholds": [],
@@ -361,7 +584,7 @@
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
           "fill": 1,
-          "height": "180px",
+          "height": "",
           "id": 3,
           "interval": ">1m",
           "legend": {
@@ -409,6 +632,8 @@
               "measurement": "BTC_EUR",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT mean(\"amount\")  / 1000 FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time($__interval) fill(0)",
+              "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -434,14 +659,7 @@
               "tags": []
             }
           ],
-          "thresholds": [
-            {
-              "colorMode": "critical",
-              "fill": true,
-              "line": true,
-              "op": "gt"
-            }
-          ],
+          "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
           "title": "VOLUME",
@@ -497,6 +715,405 @@
           "dashes": false,
           "datasource": "${DS_INFLUXDB}",
           "fill": 0,
+          "id": 4,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "sell",
+              "bars": false,
+              "color": "#bf1b00",
+              "lines": false,
+              "pointradius": 5,
+              "points": true
+            },
+            {
+              "alias": "buy",
+              "bars": false,
+              "color": "#508642",
+              "lines": false,
+              "pointradius": 5,
+              "points": true
+            }
+          ],
+          "spaceLength": 10,
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "price",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "none"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "BTC_EUR",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"price\") FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
+              "rawQuery": false,
+              "refId": "E",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "price"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "alias": "MA10",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "MA10_MA20_DIFF",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"price\") FROM \"BTC_EUR\" WHERE $timeFilter GROUP BY time(1m) fill(previous)",
+              "rawQuery": false,
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "ma10"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "alias": "MA20",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "MA10_MA20_DIFF",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "B",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "ma20"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": true,
+              "measurement": "BTC_EUR",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "C",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "price"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  },
+                  {
+                    "params": [
+                      10
+                    ],
+                    "type": "moving_average"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "linear"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": true,
+              "measurement": "BTC_EUR",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "refId": "D",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "price"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  },
+                  {
+                    "params": [
+                      "20"
+                    ],
+                    "type": "moving_average"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "alias": "sell",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "none"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "TRADE",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"price\") FROM \"TRADE\" WHERE (\"asset\" = 'bid') AND $timeFilter GROUP BY time(1m) fill(none)",
+              "rawQuery": false,
+              "refId": "F",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "price"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "ask"
+                }
+              ]
+            },
+            {
+              "alias": "buy",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "1m"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "TRADE",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT mean(\"price\") FROM \"TRADE\" WHERE (\"asset\" = 'ask') AND $timeFilter GROUP BY time($__interval) fill(null)",
+              "rawQuery": false,
+              "refId": "G",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "price"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "asset",
+                  "operator": "=",
+                  "value": "bid"
+                }
+              ]
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "MAsDB",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_INFLUXDB}",
+          "fill": 0,
           "id": 2,
           "legend": {
             "alignAsTable": true,
@@ -507,6 +1124,7 @@
             "max": true,
             "min": true,
             "show": true,
+            "sortDesc": true,
             "total": false,
             "values": true
           },
@@ -518,7 +1136,12 @@
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "seriesOverrides": [],
+          "seriesOverrides": [
+            {
+              "alias": "dif",
+              "color": "#447ebc"
+            }
+          ],
           "spaceLength": 10,
           "span": 12,
           "stack": false,
@@ -654,7 +1277,7 @@
           "thresholds": [
             {
               "colorMode": "custom",
-              "fill": true,
+              "fill": false,
               "fillColor": "rgba(0, 115, 255, 0.09)",
               "line": false,
               "op": "gt",
@@ -662,11 +1285,19 @@
             },
             {
               "colorMode": "custom",
-              "fill": true,
+              "fill": false,
               "fillColor": "rgba(226, 255, 0, 0.07)",
               "line": false,
               "op": "lt",
               "value": -2
+            },
+            {
+              "colorMode": "custom",
+              "fill": false,
+              "line": true,
+              "lineColor": "#e5ac0e",
+              "op": "gt",
+              "value": 0
             }
           ],
           "timeFrom": null,
@@ -683,7 +1314,7 @@
             "buckets": null,
             "mode": "time",
             "name": null,
-            "show": false,
+            "show": true,
             "values": []
           },
           "yaxes": [
@@ -721,7 +1352,7 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -751,5 +1382,5 @@
   },
   "timezone": "browser",
   "title": "Bl3p Trading Bot",
-  "version": 3
+  "version": 13
 }
