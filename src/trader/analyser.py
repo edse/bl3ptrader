@@ -1,3 +1,4 @@
+from django.conf import settings
 from .storage import Storage
 from .trader import Trader
 from .base import *  # noqa
@@ -128,6 +129,6 @@ class Analyser(object):
         }])
 
         if trend == 10:
-            trader.buy(current['price'])
+            trader.buy(current['price'], settings.EXCHANGES['BL3P']['soft_run'])
         elif trend == -10:
-            trader.sell(current['price'])
+            trader.sell(current['price'], settings.EXCHANGES['BL3P']['soft_run'])
