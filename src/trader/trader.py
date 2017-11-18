@@ -6,6 +6,7 @@ import hashlib
 import requests
 from django.conf import settings
 from .storage import Storage
+from .models import Trade
 from .base import *  # noqa
 
 
@@ -14,14 +15,14 @@ class Trader(object):
     def get_balance(self):
         return self.call('GENMKT/money/info', {})
 
-    def get_sell_amount(self, price):
+    def get_sell_amount(self):
         balance = self.get_balance()
-        available = balance['data']['wallets']['BTC']['available']['value_int']
+        available = int(balance['data']['wallets']['BTC']['available']['value_int'])
 
         if available < settings.EXCHANGES['BL3P']['min_sell_value']:
             return 0
 
-        return int(available)
+        return available
 
     def get_buy_amount(self, price):
         balance = self.get_balance()
@@ -30,24 +31,38 @@ class Trader(object):
         if available < settings.EXCHANGES['BL3P']['min_buy_value']:
             return 0
 
-        return int(int(available) / price)
+        return int(float(available) / float(price) * NORM_AMOUNT)
 
     def store_trade(self, params):
         logger.debug('Trade: %s', params)
 
-        Storage.store([{
+        amount = float(params['amount_int']) / NORM_AMOUNT
+        price = float(params['price_int']) / NORM_PRICE
+
+        # InfluxDB
+        stored = Storage.store([{
             'measurement': 'TRADE',
             'tags': {
-                'type': params['type']
+                'asset': params['type'],
             },
-            'fields': params
+            'fields': {
+                'price': price,
+                'amount': amount
+            }
         }])
 
-    def buy(self, price, soft_run=True):
-        amount = self.get_buy_amount(price * 100000)
-        if amount <= 0:
-            return False
+        # Django
+        Trade.objects.create(
+            amount=amount,
+            price=price,
+            total=price * amount
+        )
 
+        logger.debug('Trade stored: %s', stored)
+
+    def buy(self, price, soft_run=True):
+        price = int(price * NORM_PRICE)
+        amount = self.get_buy_amount(price)
         params = {
             'type': 'bid',
             'amount_int': amount,
@@ -56,16 +71,17 @@ class Trader(object):
         }
         self.store_trade(params)
 
-        if soft_run:
-            return True
-
-        return self.call('BTCEUR/money/order/add', params)
-
-    def sell(self, price):
-        amount = self.get_sell_amount(price * 100000)
         if amount <= 0:
             return False
 
+        if not soft_run:
+            return self.call('BTCEUR/money/order/add', params)
+
+        return True
+
+    def sell(self, price, soft_run=True):
+        price = int(price * NORM_PRICE)
+        amount = self.get_sell_amount()
         params = {
             'type': 'ask',
             'amount_int': amount,
@@ -74,10 +90,13 @@ class Trader(object):
         }
         self.store_trade(params)
 
-        if soft_run:
-            return True
+        if amount <= 0:
+            return False
 
-        return self.call('BTCEUR/money/order/add', params)
+        if not soft_run:
+            return self.call('BTCEUR/money/order/add', params)
+
+        return True
 
     def get_headers(self, path, params):
         post_data = urllib.urlencode(params)
