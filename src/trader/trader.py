@@ -55,7 +55,9 @@ class Trader(object):
         Trade.objects.create(
             amount=amount,
             price=price,
-            total=price * amount
+            total=price * amount,
+            fee=float(settings.EXCHANGES['BL3P']['trade_fee']),
+            type=Trade.BUY if params['type'] == 'bid' else Trade.SELL
         )
 
         logger.debug('Trade stored: %s', stored)

@@ -1,6 +1,7 @@
 from django.conf import settings
 from .storage import Storage
 from .trader import Trader
+from .models import Trade
 from .base import *  # noqa
 
 
@@ -128,7 +129,38 @@ class Analyser(object):
             }
         }])
 
+        last_order = Trade.objects.all().last()
+
+        # BUY
         if trend == 10:
+            if last_order:
+                if settings.EXCHANGES['BL3P']['intercalate_trade']:
+                    # last order must be a sell
+                    if last_order.type == Trade.BUY:
+                        logger.exception('Trying to buy after a buy with intercalate_trade set to true!')
+                        return False
+
+                if settings.EXCHANGES['BL3P']['safe_trade']:
+                    # check if the buy price is cheaper than the last sell
+                    if current['price'] >= last_order.price:
+                        logger.exception('Trying to buy for a higher price than last sell with safe_trade set to true!')
+                        return False
+
             trader.buy(current['price'], settings.EXCHANGES['BL3P']['soft_run'])
+
+        # SELL
         elif trend == -10:
+            if last_order:
+                if settings.EXCHANGES['BL3P']['intercalate_trade']:
+                    # last order must be a buy
+                    if last_order.type == Trade.SELL:
+                        logger.exception('Trying to sell after a sell with intercalate_trade set to true!')
+                        return False
+
+                if settings.EXCHANGES['BL3P']['safe_trade']:
+                    # check if the sell price is higher than the last buy
+                    if current['price'] <= last_order.price:
+                        logger.exception('Trying to sell for a cheaper price than last buy with safe_trade set to true!')
+                        return False
+
             trader.sell(current['price'], settings.EXCHANGES['BL3P']['soft_run'])
