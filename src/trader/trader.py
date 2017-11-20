@@ -39,7 +39,7 @@ class Trader(object):
         amount = float(params['amount_int']) / NORM_AMOUNT
         price = float(params['price_int']) / NORM_PRICE
 
-        # InfluxDB
+        # Influx
         stored = Storage.store([{
             'measurement': 'TRADE',
             'tags': {
@@ -47,7 +47,8 @@ class Trader(object):
             },
             'fields': {
                 'price': price,
-                'amount': amount
+                'amount': amount,
+                'trend': 10 if params['type'] == 'bid' else -10
             }
         }])
 
@@ -62,7 +63,7 @@ class Trader(object):
 
         logger.debug('Trade stored: %s', stored)
 
-    def buy(self, price, soft_run=True):
+    def buy(self, price):
         price = int(price * NORM_PRICE)
         amount = self.get_buy_amount(price)
         params = {
@@ -71,17 +72,14 @@ class Trader(object):
             'price_int': price,
             'fee_currency': 'BTC'
         }
-        self.store_trade(params)
 
         if amount <= 0:
             return False
 
-        if not soft_run:
-            return self.call('BTCEUR/money/order/add', params)
+        self.store_trade(params)
+        return self.call('BTCEUR/money/order/add', params)
 
-        return True
-
-    def sell(self, price, soft_run=True):
+    def sell(self, price):
         price = int(price * NORM_PRICE)
         amount = self.get_sell_amount()
         params = {
@@ -90,15 +88,12 @@ class Trader(object):
             'price_int': price,
             'fee_currency': 'BTC'
         }
-        self.store_trade(params)
 
         if amount <= 0:
             return False
 
-        if not soft_run:
-            return self.call('BTCEUR/money/order/add', params)
-
-        return True
+        self.store_trade(params)
+        return self.call('BTCEUR/money/order/add', params)
 
     def get_headers(self, path, params):
         post_data = urllib.urlencode(params)
@@ -120,7 +115,11 @@ class Trader(object):
             ).digest()
         )
 
-    def execute(self, path, params, headers, soft_run=True):
+    def execute(self, path, params, headers, soft_run):
+        if soft_run:
+            logger.debug('Skiping real api call: %s %s' % path, params)
+            return None
+
         response = requests.post(path, data=params, headers=headers)
         if response.status_code != 200:
             logger.exception('unexpected response: %s%s' % response.status_code, response.content)
@@ -139,5 +138,6 @@ class Trader(object):
         return self.execute(
             path=fullpath,
             params=params,
-            headers=headers
+            headers=headers,
+            soft_run=settings.EXCHANGES['BL3P']['soft_run']
         )
