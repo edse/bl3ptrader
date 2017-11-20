@@ -8,8 +8,10 @@ venv: clean
 
 run:
 	./src/manage.py migrate
-	./src/manage.py runserver 0.0.0.0:8000 &
 	./src/manage.py trade
+
+django:
+	./src/manage.py runserver 0.0.0.0:8000
 
 requirements:
 	pip install -r requirements.txt
