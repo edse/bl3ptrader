@@ -11,54 +11,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-
-# TWITTER
-TWITTER_CONSUMER_KEY = None
-TWITTER_CONSUMER_SECRET = None
-TWITTER_ACCESS_TOKEN = None
-TWITTER_ACCESS_TOKEN_SECRET = None
-
-# TWEET
-TWEET_TITLE = '#poloniex #{} Trading advice!'
-TWEET_POSITION = 'Position to take: {}'
-TWEET_PRICE = 'Market price: {}'
-TWEET_TIME = 'Based on market time: {}'
-
-# BOT
-BOT_TWEET = True
-BOT_MIN_DIFF = -0.00025
-BOT_MAX_DIFF = 0.00025
-BOT_ADVICE_TTL = 5 * 60
-
-# EXCHANGES
-EXCHANGES = {
-    'BL3P': {
-        'name': 'BL3P',
-        'public': {
-            'url': 'wss://api.bl3p.eu/1/BTCEUR/trades',
-        },
-        'private': {
-            'url': 'https://api.bl3p.eu/1/',
-            'public_key': 'CHANGE-ME',
-            'private_key': 'CHANGE-ME',
-        },
-        'trade_fee': 0.25,
-        'intercalate_trade': True,  # intercalte buy and sell orders
-        'safe_trade': True,         # dont sell cheap, dont buy high
-        'min_buy_value': 1000000,   # 10 EUR    (*1e5)
-        'min_sell_value': 5000000,  # 0.05 BTC  (*1e8)
-        'soft_run': True
-    }
-}
-
-# INFLUXDB
-INFLUXDB_HOST = 'localhost'
-INFLUXDB_PORT = 8086
-INFLUXDB_USER = 'root'
-INFLUXDB_PASS = 'root'
-INFLUXDB_DATABASE = 'bl3ptrader'
-
 from .params import *  # noqa
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

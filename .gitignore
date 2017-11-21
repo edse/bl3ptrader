@@ -102,6 +102,3 @@ ENV/
 
 # sqlite
 *.sqlite3
-
-# params
-/src/main/params.py
