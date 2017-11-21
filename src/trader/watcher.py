@@ -9,7 +9,7 @@ ws = None
 
 
 def on_message(ws, data):
-    logger.debug('Message received: %s', data)
+    # logger.debug('Message received: %s', data)
 
     # parse data
     data = json.loads(data)
