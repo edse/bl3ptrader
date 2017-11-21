@@ -1,22 +1,16 @@
-import hmac
-import json
-import urllib
-import base64
-import hashlib
-import requests
+from datetime import datetime
 from django.conf import settings
+from .client import Bl3p
 from .storage import Storage
 from .models import Trade
 from .base import *  # noqa
 
 
 class Trader(object):
-
-    def get_balance(self):
-        return self.call('GENMKT/money/info', {})
+    client = Bl3p()
 
     def get_sell_amount(self):
-        balance = self.get_balance()
+        balance = self.client.get_balance()
         available = int(balance['data']['wallets']['BTC']['available']['value_int'])
 
         if available < settings.EXCHANGES['BL3P']['min_sell_value']:
@@ -25,7 +19,7 @@ class Trader(object):
         return available
 
     def get_buy_amount(self, price):
-        balance = self.get_balance()
+        balance = self.client.get_balance()
         available = balance['data']['wallets']['EUR']['available']['value_int']
 
         if available < settings.EXCHANGES['BL3P']['min_buy_value']:
@@ -38,6 +32,8 @@ class Trader(object):
 
         amount = float(params['amount_int']) / NORM_AMOUNT
         price = float(params['price_int']) / NORM_PRICE
+        fee = float(settings.EXCHANGES['BL3P']['trade_fee'])
+        total = (price * amount) + (((price * amount) / 100) * fee)
 
         # Influx
         stored = Storage.store([{
@@ -56,8 +52,8 @@ class Trader(object):
         Trade.objects.create(
             amount=amount,
             price=price,
-            total=price * amount,
-            fee=float(settings.EXCHANGES['BL3P']['trade_fee']),
+            total=total,
+            fee=fee,
             type=Trade.BUY if params['type'] == 'bid' else Trade.SELL
         )
 
@@ -77,7 +73,7 @@ class Trader(object):
             return False
 
         self.store_trade(params)
-        return self.call('BTCEUR/money/order/add', params)
+        self.client.add_order(params)
 
     def sell(self, price):
         price = int(price * NORM_PRICE)
@@ -93,51 +89,42 @@ class Trader(object):
             return False
 
         self.store_trade(params)
-        return self.call('BTCEUR/money/order/add', params)
+        self.client.add_order(params)
 
-    def get_headers(self, path, params):
-        post_data = urllib.urlencode(params)
-        body = '%s%c%s' % (path, 0x00, post_data)
-        headers = {
-            'Rest-Key': settings.EXCHANGES['BL3P']['private']['public_key'],
-            'Rest-Sign': self.get_signature(body),
-        }
-        return headers
+    def take_action(self, trend, current):
+        last_order = Trade.objects.all().last()
+        logger.debug('%s: %s', str(datetime.now()), trend)
 
-    def get_signature(self, body):
-        return base64.b64encode(
-            hmac.new(
-                base64.b64decode(
-                    settings.EXCHANGES['BL3P']['private']['private_key']
-                ),
-                body,
-                hashlib.sha512
-            ).digest()
-        )
+        if trend == 10:
+            logger.debug('Trend: 10 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            if last_order:
+                if settings.EXCHANGES['BL3P']['intercalate_trade']:
+                    # last order must be a sell
+                    if last_order.type == Trade.BUY:
+                        logger.exception('Trying to buy after a buy with intercalate_trade set to true!')
+                        return False
 
-    def execute(self, path, params, headers, soft_run):
-        if soft_run:
-            logger.debug('Skiping real api call: %s %s' % path, params)
-            return None
+                if settings.EXCHANGES['BL3P']['safe_trade']:
+                    # check if the buy price is cheaper than the last sell
+                    if current['price'] >= last_order.price:
+                        logger.exception('Trying to buy for a higher price than last sell with safe_trade set to true!')
+                        return False
+            # BUY
+            self.buy(current['price'])
 
-        response = requests.post(path, data=params, headers=headers)
-        if response.status_code != 200:
-            logger.exception('unexpected response: %s%s' % response.status_code, response.content)
-            return False
+        elif trend == -10:
+            logger.debug('Trend: -10 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            if last_order:
+                if settings.EXCHANGES['BL3P']['intercalate_trade']:
+                    # last order must be a buy
+                    if last_order.type == Trade.SELL:
+                        logger.exception('Trying to sell after a sell with intercalate_trade set to true!')
+                        return False
 
-        logger.debug('Response:')
-        logger.debug(response.content)
-
-        return json.loads(response.content)
-
-    def call(self, path, params):
-        fullpath = settings.EXCHANGES['BL3P']['private']['url'] + path
-        headers = self.get_headers(path, params)
-
-        # execute call
-        return self.execute(
-            path=fullpath,
-            params=params,
-            headers=headers,
-            soft_run=settings.EXCHANGES['BL3P']['soft_run']
-        )
+                if settings.EXCHANGES['BL3P']['safe_trade']:
+                    # check if the sell price is higher than the last buy
+                    if current['price'] <= last_order.price:
+                        logger.exception('Trying to sell for a cheaper price than last buy with safe_trade set to true!')
+                        return False
+            # SELL
+            self.sell(current['price'])

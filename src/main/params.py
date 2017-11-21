@@ -1,11 +1,11 @@
 # TWITTER
-TWITTER_CONSUMER_KEY = None
-TWITTER_CONSUMER_SECRET = None
-TWITTER_ACCESS_TOKEN = None
-TWITTER_ACCESS_TOKEN_SECRET = None
+TWITTER_CONSUMER_KEY = 'CHANGE-ME'
+TWITTER_CONSUMER_SECRET = 'CHANGE-ME'
+TWITTER_ACCESS_TOKEN = 'CHANGE-ME'
+TWITTER_ACCESS_TOKEN_SECRET = 'CHANGE-ME'
 
 # TWEET
-TWEET_TITLE = '#poloniex #{} Trading advice!'
+TWEET_TITLE = '#BL3P #{} Trading advice!'
 TWEET_POSITION = 'Position to take: {}'
 TWEET_PRICE = 'Market price: {}'
 TWEET_TIME = 'Based on market time: {}'
@@ -22,11 +22,10 @@ BOT_TWEET = True
 BOT_MIN_DIFF = -0.00025
 BOT_MAX_DIFF = 0.00025
 BOT_ADVICE_TTL = 5 * 60
-
-TWITTER_CONSUMER_KEY = 'CHANGE-ME'
-TWITTER_CONSUMER_SECRET = 'CHANGE-ME'
-TWITTER_ACCESS_TOKEN = 'CHANGE-ME'
-TWITTER_ACCESS_TOKEN_SECRET = 'CHANGE-ME'
+BOT_DATA_SAMPLE_RANGE = '3h'
+BOT_DATA_SAMPLE_GROUP = '1m'
+BOT_DATA_SAMPLE_MA1 = '10'
+BOT_DATA_SAMPLE_MA2 = '20'
 
 EXCHANGES = {
     'BL3P': {
@@ -38,6 +37,10 @@ EXCHANGES = {
             'url': 'https://api.bl3p.eu/1/',
             'public_key': 'CHANGE-ME',
             'private_key': 'CHANGE-ME',
+            'paths': {
+                'get_balance': 'GENMKT/money/info',
+                'add_order': 'BTCEUR/money/order/add'
+            }
         },
         'trade_fee': 0.255,
         'compensate_fee': True,     # s
