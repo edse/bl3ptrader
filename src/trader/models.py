@@ -11,6 +11,34 @@ class Advice(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class Session(models.Model):
+    RUNNING = 'RUNNING'
+    ENDED = 'ENDED'
+    SESSION_STATUSES = (
+        (RUNNING, 'Running'),
+        (ENDED, 'Ended'),
+    )
+
+    status = models.CharField(choices=SESSION_STATUSES, max_length=25)
+    ma1 = models.PositiveSmallIntegerField()
+    ma2 = models.PositiveSmallIntegerField()
+    data_range = models.CharField(default='3h', max_length=25)
+    data_group = models.CharField(default='1m', max_length=25)
+    btc_balance_at_start = models.FloatField()
+    euro_balance_at_start = models.FloatField()
+    btc_balance = models.FloatField()
+    euro_balance = models.FloatField()
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return '#{} - {}: {} ({})'.format(
+            self.id, self.status
+        )
+
+
 class Trade(models.Model):
     BUY = 'BUY'
     SELL = 'SELL'
@@ -19,6 +47,7 @@ class Trade(models.Model):
         (SELL, 'Sell'),
     )
 
+    session = models.ForeignKey(Session, related_name='trades', default=0)
     amount = models.FloatField()
     price = models.FloatField()
     total = models.FloatField()

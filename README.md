@@ -18,3 +18,16 @@ make dev
 - Docker
 - InfluxDB
 - Graphana
+
+
+## TODO
+
+    - Write unit tests
+    - Add trend confirmation
+    - Add trading sessions
+        - Start session
+        - Resume session
+        - End session
+    - Add Balance logs and charts
+    - Add Performance logs and charts
+    - Add buy and sell profit marging

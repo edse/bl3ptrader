@@ -11,4 +11,4 @@ class AdviceAdmin(admin.ModelAdmin):
 
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('type', 'price', 'amount', 'total', 'updated_at')

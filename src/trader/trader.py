@@ -1,13 +1,34 @@
 from datetime import datetime
 from django.conf import settings
+from . import watcher as Watcher
 from .client import Bl3p
 from .storage import Storage
 from .models import Trade
+from .analyser import Analyser
 from .base import *  # noqa
 
 
 class Trader(object):
-    client = Bl3p()
+
+    def __init__(self):
+        self.client = Bl3p()
+        self.analyser = Analyser()
+        self.watcher = Watcher
+
+    def start(self):
+        self.watcher.run()
+
+    def start_ticker(self):
+        self.watcher.run_ticker(self)
+
+    def start_trader(self):
+        self.watcher.run_trader(self)
+
+    def analyse(self, trend_result):
+        trader.take_action(
+            trend=trend_result.trend,
+            current=trend_result.current
+        )
 
     def get_sell_amount(self):
         balance = self.client.get_balance()
@@ -92,8 +113,12 @@ class Trader(object):
         self.client.add_order(params)
 
     def take_action(self, trend, current):
-        last_order = Trade.objects.all().last()
+        logger.setLevel(logging.ERROR)
         logger.debug('%s: %s', str(datetime.now()), trend)
+
+        fee = float(settings.EXCHANGES['BL3P']['trade_fee'])
+        cust = current['price'] + ((current['price'] / 100) * fee)
+        last_order = Trade.objects.all().last()
 
         if trend == 10:
             logger.debug('Trend: 10 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -105,9 +130,11 @@ class Trader(object):
                         return False
 
                 if settings.EXCHANGES['BL3P']['safe_trade']:
-                    # check if the buy price is cheaper than the last sell
-                    if current['price'] >= last_order.price:
-                        logger.exception('Trying to buy for a higher price than last sell with safe_trade set to true!')
+                    # check if the buy price + fees is cheaper than the last sell
+                    if cust >= last_order.price:
+                        logger.exception('Trying to buy for a higher price than the last sell with safe_trade set to true!')
+                        logger.exception('Price + fees: %s', cust)
+                        logger.exception('Last trade price: %s', last_order.price)
                         return False
             # BUY
             self.buy(current['price'])
@@ -122,9 +149,11 @@ class Trader(object):
                         return False
 
                 if settings.EXCHANGES['BL3P']['safe_trade']:
-                    # check if the sell price is higher than the last buy
-                    if current['price'] <= last_order.price:
-                        logger.exception('Trying to sell for a cheaper price than last buy with safe_trade set to true!')
+                    # check if the sell price is higher than the last buy + fees
+                    if cust <= last_order.price:
+                        logger.exception('Trying to sell for a cheaper price than the last buy with safe_trade set to true!')
+                        logger.exception('Price + fees: %s', cust)
+                        logger.exception('Last trade price: %s', last_order.price)
                         return False
             # SELL
             self.sell(current['price'])

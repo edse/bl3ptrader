@@ -1,24 +1,34 @@
 from django.conf import settings
-from .storage import Storage
-from .analyser import Analyser
 import json
+import requests
+from time import sleep
 import websocket
+
+from .storage import Storage
 from .base import *  # noqa
 
-ws = None
+websocket.enableTrace(True)
+
+trader = None
+ws_trades = None
+ws_ticker = None
 
 
-def on_message(ws, data):
-    # logger.debug('Message received: %s', data)
+def get_ticker_path():
+    return settings.EXCHANGES['BL3P']['public']['http'] + \
+        settings.EXCHANGES['BL3P']['public']['paths']['ticker']
 
-    # parse data
-    data = json.loads(data)
-    price_len = len(str(data['price_int']))
-    price = float(str(data['price_int'])[:price_len - 5] + '.' + str(data['price_int'])[-5:])
-    amount_len = len(str(data['amount_int']))
-    amount = float(str(data['amount_int'])[:amount_len - 5] + '.' + str(data['amount_int'])[-5:])
 
-    payload = Storage.store([{
+def get_trades_path():
+    return settings.EXCHANGES['BL3P']['public']['wss'] + \
+        settings.EXCHANGES['BL3P']['public']['paths']['trades']
+
+
+def parse_trade(message):
+    data = json.loads(message)
+    price = float(data['price_int']) / NORM_PRICE
+    amount = float(data['amount_int']) / NORM_AMOUNT
+    return Storage.store([{
         'measurement': 'BTC_EUR',
         'tags': {
             'asset': 'BTC',
@@ -31,18 +41,89 @@ def on_message(ws, data):
         }
     }])
 
-    Analyser.analyse(payload[0])
+
+def on_trade_message(ws, message):
+    logger.setLevel(logging.WARNING)
+    data = parse_trade(message)[0]
+    if settings.DEBUG:
+        logger.debug('parsed: %s', data)
+
+    trader.analyse(data)
 
 
 def on_error(ws, error):
-    logger.exception('Websocket error... %s', error)
+    if settings.DEBUG:
+        logger.exception('Websocket error... %s', error)
+
+
+def run_ticker(trader):
+    logger.setLevel(logging.DEBUG)
+    last = 0
+    while True:
+        print 'asdf'
+        response = requests.get(get_ticker_path())
+        if response.status_code != 200:
+            print('unexpected response: %s%s' % response.status_code, response.content)
+            return False
+
+        data = json.loads(response.content)
+        if settings.DEBUG:
+            logger.debug(data['last'])
+
+        if float(data['last']) != last:
+            last = float(data['last'])
+
+            stored = Storage.store([{
+                'measurement': 'BTC_EUR',
+                'tags': {
+                    'asset': 'BTC',
+                    'currency': 'EUR'
+                },
+                'fields': {
+                    'timestamp': data['timestamp'],
+                    'price': last,
+                }
+            }])
+
+            # if settings.DEBUG:
+            #     logger.debug(stored[0])
+
+            trader.analyse(stored[0])
+
+        sleep(float(settings.BOT_TICKER_INTERVAL))
+
+
+def run_trader(trader):
+    trader = trader  # noqa
+    ws_trades = websocket.WebSocketApp(
+        get_trades_path(),
+        on_message=on_trade_message,
+        on_error=on_error
+    )
+    ws_trades.run_forever()
 
 
 def run():
-    websocket.enableTrace(True)
-    ws = websocket.WebSocketApp(
-        settings.EXCHANGES['BL3P']['public']['url'],
-        on_message=on_message,
-        on_error=on_error,
-    )
-    ws.run_forever()
+    from subprocess import Popen
+    from sys import stdout, stdin, stderr
+    import time
+    import os
+    import signal
+
+    commands = [
+        './src/manage.py trader',
+        './src/manage.py ticker'
+    ]
+
+    proc_list = []
+    for command in commands:
+        print "$ " + command
+        proc = Popen(command, shell=True, stdin=stdin, stdout=stdout, stderr=stderr)
+        proc_list.append(proc)
+
+    try:
+        while True:
+            time.sleep(10)
+    except KeyboardInterrupt:
+        for proc in proc_list:
+            os.kill(proc.pid, signal.SIGKILL)

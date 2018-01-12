@@ -1,7 +1,10 @@
+from collections import namedtuple
 from django.conf import settings
 from .storage import Storage
-from .trader import Trader
 from .base import *  # noqa
+
+
+TrendResult = namedtuple('Trend', ['trend', 'current'])
 
 
 class Analyser(object):
@@ -17,6 +20,7 @@ class Analyser(object):
             int(10): when the trending is up and a sell action is required
         """
         trend = 0
+        state = 'No trend'
         influx_client = Storage.get_client()
 
         q = """SELECT mean("diff") as diff
@@ -36,20 +40,27 @@ class Analyser(object):
             d2 = d2['diff']
 
             if d2 > d1:
-                # growing
+                # up trend
                 if d1 <= 0 and d2 > 0:
                     trend = 10  # buy action
+                    state = 'buy'
                 else:
                     trend = 1
+                    state = 'up'
             elif d2 < d1:
                 # shrinking
                 if d2 <= 0 and d1 > 0:
                     trend = -10  # sell action
+                    state = 'sell'
                 else:
                     trend = -1
+                    state = 'down'
 
         Storage.store([{
             'measurement': 'TREND',
+            'tags': {
+                'state': state,
+            },
             'fields': {
                 'trend': trend
             }
@@ -59,6 +70,7 @@ class Analyser(object):
 
     @staticmethod
     def analyse(data):
+        logger.setLevel(logging.INFO)
         # logger.debug('Analysing...')
         range = settings.BOT_DATA_SAMPLE_RANGE  # 3h
         group = settings.BOT_DATA_SAMPLE_GROUP  # 1m
@@ -120,7 +132,7 @@ class Analyser(object):
         if 'ma2' in r:
             current['ma2'] = r['ma2']
 
-        # logger.info('Current: %s', current)
+        # logger.info(current)
 
         if current['time'] and current['price'] and current['ma1'] and current['ma2']:
             # diff
@@ -142,6 +154,6 @@ class Analyser(object):
             }])
 
         trend = Analyser.checkTrend()
+        logger.info(trend)
 
-        trader = Trader()
-        trader.take_action(trend=trend, current=current)
+        return TrendResult(trend, current)
